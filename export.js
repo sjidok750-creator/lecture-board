@@ -20,11 +20,11 @@ async function pickCodec(fps) {
 }
 
 /** 강의 타임라인 → { blob, ext, method, codec, ms } */
-export async function exportVideo({ tl, env, fps = 24, hold = 1.0, onProgress = () => {} }) {
+export async function exportVideo({ tl, env, fps = 24, hold = 1.0, onProgress = () => {}, noWebCodecs = false }) {
   const t0 = performance.now();
   const lim = tl.end + hold;
   const N = Math.ceil(lim * fps - 1e-9); // 영상 렌더러(lib\video.mjs)와 같은 프레임 수: t = i/fps < lim
-  const cfg = await pickCodec(fps);
+  const cfg = noWebCodecs ? null : await pickCodec(fps);
   if (cfg) {
     const { Muxer, ArrayBufferTarget } = await import('./vendor/mp4-muxer.mjs');
     const muxer = new Muxer({ target: new ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H, frameRate: fps }, fastStart: 'in-memory' });
@@ -45,13 +45,13 @@ export async function exportVideo({ tl, env, fps = 24, hold = 1.0, onProgress = 
       enc.encode(vf, { keyFrame: i % (fps * 4) === 0 });
       vf.close();
       while (enc.encodeQueueSize > 6) await sleep(2);
-      if (i % 12 === 0) { onProgress(i / N, '영상 만드는 중'); await sleep(0); }
+      if (i % 12 === 0) { onProgress(i / N, '저장'); await sleep(0); }
     }
     await enc.flush();
     if (err) throw err;
     enc.close();
     muxer.finalize();
-    onProgress(1, '영상 만드는 중');
+    onProgress(1, '저장');
     return { blob: new Blob([muxer.target.buffer], { type: 'video/mp4' }), ext: 'mp4', method: 'WebCodecs', codec: cfg.codec, ms: Math.round(performance.now() - t0), frames: N };
   }
   // 2순위: 실시간 녹화
@@ -74,7 +74,7 @@ export async function exportVideo({ tl, env, fps = 24, hold = 1.0, onProgress = 
         const step = () => {
           const t = Math.min(lim, (performance.now() - start) / 1000);
           board.render(ctx, t);
-          onProgress(t / lim, '실시간 녹화 중');
+          onProgress(t / lim, '녹화');
           if (t >= lim) resolve(); else setTimeout(step, 1000 / fps / 2);
         };
         step();

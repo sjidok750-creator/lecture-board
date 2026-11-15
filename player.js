@@ -30,7 +30,7 @@ function setMsg() {
   if (note) s = note;
   else if (!tl) s = '준비 중';
   else {
-    s = `${fmt(t)} / ${fmt(tl.end + (tl.ended ? HOLD : 0))}`;
+    s = portrait.matches ? `${fmt(t)}/${fmt(tl.end + (tl.ended ? HOLD : 0))}` : `${fmt(t)} / ${fmt(tl.end + (tl.ended ? HOLD : 0))}`;
     if (!tl.ended && t >= tl.end - 1e-6) s = '다음 대본 기다리는 중 ' + s;
     if (LIVE) s += '  ·  ' + (videoText || '영상 만드는 중');
   }
@@ -144,6 +144,7 @@ async function staticFonts(text) {
   const t0 = performance.now();
   if (!CH) CH = await import('./core/chunks.js');
   if (chunkIdx === null) { try { chunkIdx = await CH.loadIndex(BASE); } catch { chunkIdx = false; } }
+  window.__lb.indexMs = Math.round(performance.now() - t0);
   if (!chunkIdx) { // 조각이 없는 곳(엔진 폴더를 그대로 연 경우)
     if (!F) F = await makeFonts(loadBytes, boardCfg);
     return;
@@ -182,7 +183,7 @@ $('bSave').onclick = async () => {
   $('bSave').disabled = true;
   try {
     const { exportVideo, fileName, saveFile } = await import('./export.js');
-    const res = await exportVideo({ tl, env, fps: FPS, hold: HOLD, onProgress: (p, how) => { note = `${how} ${Math.round(p * 100)}%`; } });
+    const res = await exportVideo({ tl, env, fps: FPS, hold: HOLD, noWebCodecs: params.has('rec'), onProgress: (p, how) => { note = `${how} ${Math.round(p * 100)}%`; } }); // ?rec=1: 시험용(실시간 녹화 차선)
     const name = fileName(tl.title, res.ext);
     window.__lb.exported = { bytes: res.blob.size, ms: res.ms, method: res.method, codec: res.codec, name };
     const r = await saveFile(res.blob, name);
