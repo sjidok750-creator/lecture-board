@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e9e7e2">
+<title>화이트보드 강의</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  html, body { margin: 0; height: 100%; background: #e9e7e2; font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; -webkit-text-size-adjust: 100%; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+  #wrap { display: flex; flex-direction: column; align-items: center; }
+  /* 가로 화면·PC: 판(16:9, 자막 띠 포함)을 화면 너비와 (높이 - 아래 띠) 중 작은 쪽에 맞춤 */
+  #stage { width: min(100vw, calc((100dvh - 40px) * 16 / 9)); aspect-ratio: 16 / 9; overflow: hidden; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18); cursor: pointer; }
+  #board { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+  #cap { display: none; }
+  #bar { display: flex; gap: 6px; align-items: center; height: 40px; width: min(100vw, calc((100dvh - 40px) * 16 / 9)); box-sizing: border-box; padding: 0 8px; font-size: 13px; color: #444; }
+  #bar button { font: inherit; border: 1px solid #bbb; background: #fff; border-radius: 5px; padding: 4px 9px; cursor: pointer; white-space: nowrap; color: #222; }
+  #bar button:disabled { color: #999; cursor: default; }
+  #bar button.hot { background: #1f4fc2; border-color: #1f4fc2; color: #fff; }
+  #msg { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-align: right; color: #555; }
+  /* 휴대폰 세로: 판을 화면 너비에 꽉(자막 띠는 잘라 냄), 자막은 판 아래 큰 글씨로 따로 */
+  @media (orientation: portrait) {
+    body { justify-content: flex-start; padding-top: max(10px, env(safe-area-inset-top)); }
+    #wrap { width: 100vw; }
+    #stage { width: 100vw; aspect-ratio: 1280 / 610; box-shadow: none; }
+    #cap { display: block; box-sizing: border-box; width: 100vw; min-height: 6.2em; padding: 10px 14px; background: #f3f2ee; color: #222; font-size: 17px; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+    #bar { width: 100vw; height: 44px; padding: 0 6px; gap: 5px; font-size: 13px; }
+    #bar button { padding: 5px 8px; }
+  }
+  #paste { position: fixed; inset: 0; background: rgba(30,30,30,.55); display: none; align-items: center; justify-content: center; }
+  #paste .box { background: #fff; border-radius: 8px; padding: 14px; width: min(92vw, 760px); box-sizing: border-box; }
+  #paste textarea { width: 100%; height: 46vh; box-sizing: border-box; font: 14px/1.5 Consolas, "Malgun Gothic", monospace; }
+  #paste .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  #paste button { font: inherit; font-size: 14px; border: 1px solid #bbb; background: #fff; border-radius: 5px; padding: 5px 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage" title="눌러서 멈춤 / 재생"><canvas id="board" width="1280" height="720"></canvas></div>
+  <div id="cap"></div>
+  <div id="bar">
+    <button id="bPlay" title="멈춤 / 재생 (스페이스)">멈춤</button>
+    <button id="bRestart" title="처음부터">처음부터</button>
+    <button id="bSave" title="이 강의를 MP4 영상 파일로 저장" hidden>영상 저장</button>
+    <button id="bFull" title="전체 화면" hidden>전체 화면</button>
+    <button id="bPaste" title="대본을 붙여 넣어 재생" hidden>대본</button>
+    <span id="msg">준비 중</span>
+  </div>
+</div>
+<div id="paste"><div class="box">
+  <div style="margin-bottom:6px;font-size:14px;color:#333">강의 대본을 붙여 넣고 재생을 누르세요.</div>
+  <textarea id="src" spellcheck="false" placeholder="# 제목&#10;:: 자막&#10;- 판서할 줄&#10;@끝"></textarea>
+  <div class="row"><button id="bClose">닫기</button><button id="bGo">재생</button></div>
+</div></div>
+<script type="module" src="player.js"></script>
+</body>
+</html>
