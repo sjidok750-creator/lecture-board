@@ -6,7 +6,7 @@ import { Layout, DEFAULTS, boardChain, capChain, mergeCfg } from './layout.js';
 export { Board, totalDuration } from './draw.js';
 export { DEFAULTS };
 
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 
 /** loadBytes(relPath) → Promise<ArrayBuffer>. relPath 는 web\ 기준(예: fonts/...ttf) */
 export async function makeFonts(loadBytes, cfg = {}) {
