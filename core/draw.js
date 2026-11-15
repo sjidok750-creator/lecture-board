@@ -243,7 +243,8 @@ export class Board {
 
   full(ctx, s) {
     if (s.type === 'g') this.glyphFull(ctx, s); else if (s.type === 'p') this.lineFull(ctx, s); else this.dotFull(ctx, s);
-    delete s._im; // 바탕에 구웠으면 잉크 그림은 버림(처음부터 다시 볼 때 다시 만듦)
+    // 바탕에 구웠으면 잉크 그림은 버림(처음부터 다시 볼 때 다시 만듦). 크기를 0 으로 해 두면 브라우저가 캔버스 메모리를 바로 돌려줌(아이폰 사파리 캔버스 메모리 한도 대비)
+    if (s._im) { try { s._im.cv.width = 0; s._im.cv.height = 0; } catch { /* 없음 */ } delete s._im; }
   }
   partial(ctx, s, p) {
     if (s.type === 'g') return this.glyphPartial(ctx, s, p);

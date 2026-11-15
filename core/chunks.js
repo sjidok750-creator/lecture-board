@@ -30,7 +30,20 @@ export function decodeCmds(s) {
   return out;
 }
 
-function hasCp(ranges, cp) {
+/** 코드포인트 범위 ↔ 짧은 글: 'd' 또는 'd.l'(36진수, d = 앞 범위 끝과의 간격-1, l = 길이-1)을 쉼표로 */
+export function encodeRanges(ranges) {
+  let prev = -1; const out = [];
+  for (const [a, b] of ranges) { out.push((a - prev - 1).toString(36) + (b > a ? '.' + (b - a).toString(36) : '')); prev = b; }
+  return out.join(',');
+}
+export function decodeRanges(s) {
+  let prev = -1; const out = [];
+  for (const tok of s ? s.split(',') : []) { const [d, l] = tok.split('.'); const a = prev + 1 + parseInt(d, 36), b = a + (l ? parseInt(l, 36) : 0); out.push([a, b]); prev = b; }
+  return out;
+}
+function rangesOf(f) { return f._r || (f._r = decodeRanges(f.r)); }
+function hasCp(f, cp) {
+  const ranges = rangesOf(f);
   let lo = 0, hi = ranges.length - 1;
   while (lo <= hi) { const mid = (lo + hi) >> 1, r = ranges[mid]; if (cp < r[0]) hi = mid - 1; else if (cp > r[1]) lo = mid + 1; else return true; }
   return false;
@@ -58,7 +71,7 @@ export function needChunks(idx, text, cfg = {}) {
       const cp = ch.codePointAt(0);
       for (const n of chain) {
         const f = idx.fonts[n];
-        if (f && hasCp(f.ranges, cp)) { (need[n] ||= new Set()).add(chunkKey(cp, rank, idx.tiers)); break; }
+        if (f && hasCp(f, cp)) { (need[n] ||= new Set()).add(chunkKey(cp, rank, idx.tiers)); break; }
       }
     }
   };
@@ -79,7 +92,7 @@ export class ChunkFonts {
     const cp = ch.codePointAt(0);
     for (const n of chain) {
       const f = this.idx.fonts[n];
-      if (!f || !hasCp(f.ranges, cp)) continue;
+      if (!f || !hasCp(f, cp)) continue;
       const e = this.rec[n] && this.rec[n].get(cp);
       if (!e) { const k = chunkKey(cp, rankOf(this.idx), this.idx.tiers); this.missing.set(n + '/' + k, [n, k]); return { font: n, gi: -1 }; }
       return { font: n, gi: e[1] };
@@ -97,7 +110,7 @@ export class ChunkFonts {
   }
 }
 
-/** 조각 받기(브라우저). 받은 조각은 Cache Storage 에 남겨 다음 방문에 다시 받지 않는다(이름에 내용 해시가 있어 낡지 않음) */
+/** 조각 받기(브라우저). 받은 조각은 Cache Storage 에 남겨 다음 방문에 다시 받지 않는다(주소에 글꼴별 내용 해시 ?v= 가 있어 낡지 않음) */
 const CACHE = 'lecture-board-glyphs-1';
 async function getJSON(url) {
   if (typeof caches !== 'undefined') {
@@ -107,7 +120,7 @@ async function getJSON(url) {
       if (hit) return await hit.json();
       const r = await fetch(url);
       if (!r.ok) throw new Error(url + ' ' + r.status);
-      try { await c.put(url, r.clone()); } catch { /* 저장 못 해도 진행 */ }
+      c.put(url, r.clone()).catch(() => { /* 저장 못 해도 진행 */ }); // 기다리지 않음(첫 판서를 늦추지 않게)
       return await r.json();
     } catch (e) { if (/ \d{3}$/.test(e.message)) throw e; /* 캐시를 못 쓰면 그냥 받음 */ }
   }
@@ -122,8 +135,8 @@ export async function loadIndex(base) {
 }
 /** list: [[글꼴, 조각 이름], …] 중 아직 안 받은 것만 받는다 */
 export async function loadChunks(base, F, list) {
-  const todo = list.filter(([n, k]) => !F.loaded.has(n + '/' + k) && F.idx.fonts[n] && F.idx.fonts[n].files[k]);
-  const got = await Promise.all(todo.map(([n, k]) => getJSON(`${base}fonts/chunks/${n}/${k}.${F.idx.fonts[n].files[k]}.json`)));
+  const todo = list.filter(([n, k]) => !F.loaded.has(n + '/' + k) && F.idx.fonts[n]);
+  const got = await Promise.all(todo.map(([n, k]) => getJSON(`${base}fonts/chunks/${n}/${k}.json?v=${F.idx.fonts[n].v}`)));
   todo.forEach(([n, k], i) => F.add(n, k, got[i]));
   return todo.length;
 }
