@@ -18,7 +18,7 @@ let t = 0, playing = true, lastNow = null, lastPaint = -1e9, lastKey = null;
 let reported = {}, videoText = '', stallAcc = 0, note = '';
 let gotConfig; const configReady = new Promise((r) => { gotConfig = r; });
 const portrait = matchMedia('(orientation: portrait)');
-window.__lb = { get t() { return t; }, get tl() { return tl; }, firstDrawMs: null, fontsMs: null, timelineMs: null };
+window.__lb = { get t() { return t; }, get tl() { return tl; }, get sig() { return tl ? timelineSig(tl) : null; }, firstDrawMs: null, fontsMs: null, timelineMs: null };
 
 function report(ev, extra = {}) {
   if (!LIVE) return;
